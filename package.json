@@ -1,0 +1,32 @@
+{
+  "name": "lotus-nng-client",
+  "version": "0.1.0",
+  "description": "TypeScript library with NNG socket listeners and RPC commands",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LotusiaStewardship/lotus-nng-client.git"
+  },
+  "author": "Lotusia Stewardship",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/LotusiaStewardship/lotus-nng-client/issues"
+  },
+  "homepage": "https://github.com/LotusiaStewardship/lotus-nng-client#readme",
+  "dependencies": {
+    "dotenv": "17.2.2",
+    "flatbuffers": "25.2.10",
+    "nanomsg": "file:submodules/nanomsg"
+  },
+  "devDependencies": {
+    "@types/flatbuffers": "1.10.3",
+    "@types/nanomsg": "4.2.3",
+    "@types/node": "24.3.1",
+    "prettier": "3.6.2",
+    "typescript": "5.9.2",
+    "typescript-eslint": "8.43.0"
+  }
+}
