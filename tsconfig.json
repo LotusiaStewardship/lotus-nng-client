@@ -1,0 +1,17 @@
+{
+  "exclude": ["submodules", "node_modules"],
+  "compilerOptions": {
+    "rootDirs": [".", ".output"],
+    "outDir": "./.output",
+    "declaration": false,
+    "removeComments": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "module": "Node16",
+    "moduleResolution": "node16",
+    "target": "ES2022",
+    "lib": ["ES2022", "ES5", "ES6"]
+  }
+}
