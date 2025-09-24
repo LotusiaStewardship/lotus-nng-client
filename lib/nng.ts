@@ -16,10 +16,12 @@ import {
   BlockIdentifier,
   BlockHeight,
   RpcCall,
-  Block,
+  Block as BlockNNG,
   GetBlockResponse,
   GetMempoolResponse,
   GetBlockRangeResponse,
+  Hash,
+  BlockHeader,
 } from './nng-interface'
 import { config } from 'dotenv'
 /**
@@ -72,6 +74,15 @@ export type NNGQueue = {
   pending: NNGPendingMessage[]
 }
 
+/** Block object, parsed from `NNG.BlockHeader` flatbuffer */
+export type Block = {
+  hash: string
+  height: number
+  timestamp: bigint
+  ranksLength: number // default is 0 if a block is cringe
+  rnkcsLength: number // default is 0 if a block is cringe
+  prevhash?: string // for reorg checks only; does not get saved to database
+}
 /**
  * Error codes
  */
@@ -250,13 +261,13 @@ export class NNG extends EventEmitter {
    * @param height `height` parsed from `BlockHeader`
    * @returns {Promise<Block>}
    */
-  async rpcGetBlock(height: number): Promise<Block | null> {
+  async rpcGetBlock(height: number): Promise<BlockNNG | null> {
     try {
       const bb = await this.rpcCall('GetBlockRequest', {
         blockRequest: { height },
       })
       return bb instanceof ByteBuffer
-        ? GetBlockResponse.getRootAsGetBlockResponse(bb).block()
+        ? (GetBlockResponse.getRootAsGetBlockResponse(bb).block() as BlockNNG)
         : null
     } catch (e: unknown) {
       throw new Error(`rpcGetBlock(${height}): ${(e as Error).message}`)
@@ -378,5 +389,48 @@ export class NNG extends EventEmitter {
       })
       socket.send(msg)
     })
+  }
+  /**
+   * Parse raw `NNG.Hash` flatbuffer for the 32-byte block hash or txid
+   * @param hash - The raw `NNG.Hash` flatbuffer
+   * @returns The blockhash or txid
+   */
+  static toBlockhashOrTxid(hash: Hash) {
+    // assume that the hash is valid
+    const { bb_pos, bb } = hash
+    return Buffer.from(
+      bb!
+        .bytes()
+        .subarray(bb_pos, bb_pos + 32)
+        .reverse(),
+    ).toString('hex')
+  }
+  /**
+   * Parse raw `NNG.BlockHeader` flatbuffer into a `Block` object
+   * @param header - The raw `NNG.BlockHeader` flatbuffer
+   * @param includePrevHash - Whether to include the previous block hash
+   * @returns The block
+   */
+  static toBlock(header: BlockHeader, includePrevhash = false): Block {
+    const height = this.toBlockHeight(header)
+    const timestamp = header.timestamp()
+    const hash = this.toBlockhashOrTxid(header.blockHash()!.hash()!)
+    const block = { hash, height, timestamp } as Block
+    if (includePrevhash) {
+      block.prevhash = this.toBlockhashOrTxid(header.prevBlockHash()!.hash()!)
+    }
+    return block
+  }
+
+  /**
+   * Parse raw `NNG.BlockHeader` flatbuffer for the nHeight
+   * (https://docs.givelotus.org/specs/blockheader)
+   * @param header - The raw `NNG.BlockHeader` flatbuffer
+   * @returns The block height
+   */
+  static toBlockHeight(header: BlockHeader) {
+    // assume that the rawArray of the header is valid
+    const nHeight = header.rawArray()!.subarray(60, 64)
+    return Buffer.from(nHeight).readUInt32LE()
   }
 }
